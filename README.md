@@ -1,38 +1,23 @@
-# sv
+# Wrong error handling with Multiple Rest Parameters & Param Matchers in SvelteKit
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+This repository contains a minimal reproduction of a bug in SvelteKit related to error handling when using multiple rest parameters in route definitions.
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+## Setup
 ```
+Routes
+[...prefix]/[event=eventSlug]/[id]/overview/+page.svelte
+[...prefix]/[event=eventSlug]/[id]/details/+page.svelte
+                                          ...
+[...prefix]/[event=eventSlug]/[id]/[...rest]/+page.ts -> throw 404
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+[...prefix]/[event=eventSlug]/[id]/+error.svelte -> never called
 ```
+## Expected Behavior
+When a request is made to a route that does not match any of the defined subpaths of `/event/:id` (e.g., `/some/long/prefix/event|project/:id/invalid-path`), the `/event/:id/+error.svelte` component should be rendered, displaying a 404 error page.
 
-## Building
+## Actual Behavior
+Instead of rendering the nested `+error.svelte` component, SvelteKit renders the top-most `+error.svelte` component, which is not what I would expect.
 
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## To be noted:
+- The issue does not occur, when you remove the `[...prefix]` part of the route.
+- It also does not occur, when you don't use a parameter in the route (e.g., `event` instead of `[event=eventSlug]`).
